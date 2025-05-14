@@ -1,0 +1,72 @@
+# Build stage with cargo-chef for optimized builds
+FROM rust:slim-bullseye AS chef
+RUN apt update \
+    && apt install -y libclang-dev clang \
+        build-essential tcl protobuf-compiler file \
+        libssl-dev pkg-config git cmake \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up cargo-chef and the right toolchain
+COPY rust-toolchain.toml rust-toolchain.toml
+RUN cat rust-toolchain.toml | grep "channel" | awk '{print $3}' | sed 's/\"//g' > toolchain.txt \
+    && rustup update $(cat toolchain.txt) \
+    && rustup default $(cat toolchain.txt) \
+    && rm toolchain.txt rust-toolchain.toml \
+    && cargo install cargo-chef
+
+# Planner stage
+FROM chef AS planner
+ARG BUILD_DEBUG=false
+ENV CARGO_PROFILE_RELEASE_DEBUG=$BUILD_DEBUG
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+# Builder stage
+FROM chef AS builder
+ARG BUILD_DEBUG=false
+ENV CARGO_PROFILE_RELEASE_DEBUG=$BUILD_DEBUG
+# Set encryption feature by default
+ARG ENABLE_FEATURES="encryption"
+COPY --from=planner /recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+COPY . .
+RUN cargo build -p libsql-server --features "$ENABLE_FEATURES" --release
+RUN cargo build -p bottomless-cli --release
+
+# Final runtime image
+FROM debian:bullseye-slim
+
+# Create non-root user with fixed UID/GID for Kubernetes
+RUN groupadd --system --gid 1000 sqld && \
+    useradd --system --uid 1000 --gid 1000 --home /data sqld
+
+# Install any runtime dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set up directories with proper permissions
+WORKDIR /app
+RUN mkdir -p /data && chown -R sqld:sqld /data
+
+# Copy binaries from builder
+COPY --from=builder /target/release/sqld /app/sqld
+COPY --from=builder /target/release/bottomless-cli /app/bottomless-cli
+
+# Copy entrypoint script
+COPY k8s-entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Set appropriate volume
+VOLUME ["/data"]
+
+# Expose ports
+EXPOSE 5001 8080
+
+# Set user to run as non-root
+USER sqld
+
+# Set entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"]
