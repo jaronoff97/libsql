@@ -18,6 +18,7 @@ permissions:
 
 jobs:
   update_release_draft:
+    if: false
     permissions:
       # write permission is required to create a github release
       contents: write

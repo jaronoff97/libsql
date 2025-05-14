@@ -8,6 +8,7 @@ on:
 
 jobs:
   prebuild:
+    if: false
     name: Prebuild for ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:

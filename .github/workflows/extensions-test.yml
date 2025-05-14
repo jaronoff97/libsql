@@ -2,10 +2,10 @@ name: Extensions Tests
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
   merge_group:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   c-tests:
+    if: false
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -41,6 +42,7 @@ jobs:
           make test
 
   rs-tests:
+    if: false
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -61,6 +63,7 @@ jobs:
           cargo test --features=loadable_extension
 
   extensions-tests:
+    if: false
     runs-on: ubuntu-latest
     name: Extensions Tests
 

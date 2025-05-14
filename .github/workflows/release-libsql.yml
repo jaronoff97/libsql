@@ -7,8 +7,8 @@ on:
       - libsql-sqlite3-v*.*.*
 
 jobs:
-        
   start-runner:
+    if: false
     name: Start self-hosted EC2 runner
     runs-on: ubuntu-latest
     outputs:
@@ -34,18 +34,19 @@ jobs:
           security-group-id: sg-01bd3845621443669
 
   build_binaries:
+    if: false
     needs: start-runner
     strategy:
       matrix:
-        os: 
+        os:
           - ubuntu-latest
           - macos-14
           - ${{ needs.start-runner.outputs.label }}
-        variant: 
-          - 'wasm-udf-dynamic'
-          - 'wasm-udf-wasmedge'
-          - 'wasm-udf'
-          - ''
+        variant:
+          - "wasm-udf-dynamic"
+          - "wasm-udf-wasmedge"
+          - "wasm-udf"
+          - ""
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -60,7 +61,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > ./rustup.sh
           chmod a+x rustup.sh
           ./rustup.sh -y
-          if [[ "${{ matrix.os}}" == "${{ needs.start-runner.outputs.label }}" ]]; then 
+          if [[ "${{ matrix.os}}" == "${{ needs.start-runner.outputs.label }}" ]]; then
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
             echo "${CARGO_HOME:-$HOME/.cargo}/bin" >> $GITHUB_PATH
             echo "PATH=$PATH:/root/.cargo/bin" >> $GITHUB_PATH
@@ -74,7 +75,7 @@ jobs:
         run: |
           git config --global core.autocrlf false
           git config --global core.eol lf
-  
+
       - uses: actions/checkout@v3
 
       - uses: dtolnay/rust-toolchain@stable
@@ -100,7 +101,7 @@ jobs:
               ;;
             "wasm-udf-wasmedge")
               # Fix for https://github.com/WasmEdge/WasmEdge/issues/2622
-              if [[ "${{ matrix.os}}" == "${{ needs.start-runner.outputs.label }}" ]]; then 
+              if [[ "${{ matrix.os}}" == "${{ needs.start-runner.outputs.label }}" ]]; then
                 curl -SLO https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh
                 chmod a+x install.sh
                 ./install.sh --dist manylinux2014 -D
@@ -123,11 +124,11 @@ jobs:
         working-directory: libsql-sqlite3
         run: |
           set -ex
-          if [[ "${{ matrix.variant }}" == "wasm-udf-wasmedge" ]]; then 
+          if [[ "${{ matrix.variant }}" == "wasm-udf-wasmedge" ]]; then
             source ~/.wasmedge/env || echo "no wasmedge installed"
           fi
           pushd build
-          make 
+          make
           make sqlite3.c
           ls -la
           popd
@@ -160,29 +161,29 @@ jobs:
           ls -la
           cd ..
 
-      - name: Push artefacts into release draft
-        working-directory: libsql-sqlite3
-        uses: softprops/action-gh-release@v1
-        if: ${{startsWith(github.ref, 'refs/tags/') }}
-        with:
-          fail_on_unmatched_files: false
-          files: |
-            build/libsql-${{ github.ref_name }}-${{ matrix.variant }}-Linux-x86_64.tar.gz
-            build/libsql-amalgamation-${{ github.ref_name }}-${{ matrix.variant }}-Linux-x86_64.tar.gz
-            build/libsql-${{ github.ref_name }}-Linux-x86_64.tar.gz
-            build/libsql-amalgamation-${{ github.ref_name }}-Linux-x86_64.tar.gz
-            build/libsql-${{ github.ref_name }}-${{ matrix.variant }}-Linux-aarch64.tar.gz
-            build/libsql-amalgamation-${{ github.ref_name }}-${{ matrix.variant }}-Linux-aarch64.tar.gz
-            build/libsql-${{ github.ref_name }}-Linux-aarch64.tar.gz
-            build/libsql-amalgamation-${{ github.ref_name }}-Linux-aarch64.tar.gz
-            build/libsql-${{ github.ref_name }}-${{ matrix.variant }}-Darwin-x86_64.tar.gz
-            build/libsql-amalgamation-${{ github.ref_name }}-${{ matrix.variant }}-Darwin-x86_64.tar.gz
-            build/libsql-${{ github.ref_name }}-Darwin-x86_64.tar.gz
-            build/libsql-amalgamation-${{ github.ref_name }}-Darwin-x86_64.tar.gz
-            build/libsql-${{ github.ref_name }}-${{ matrix.variant }}-Darwin-arm64.tar.gz
-            build/libsql-amalgamation-${{ github.ref_name }}-${{ matrix.variant }}-Darwin-arm64.tar.gz
-            build/libsql-${{ github.ref_name }}-Darwin-arm64.tar.gz
-            build/libsql-amalgamation-${{ github.ref_name }}-Darwin-arm64.tar.gz
+      # - name: Push artefacts into release draft
+      #   working-directory: libsql-sqlite3
+      #   uses: softprops/action-gh-release@v1
+      #   if: ${{startsWith(github.ref, 'refs/tags/') }}
+      #   with:
+      #     fail_on_unmatched_files: false
+      #     files: |
+      #       build/libsql-${{ github.ref_name }}-${{ matrix.variant }}-Linux-x86_64.tar.gz
+      #       build/libsql-amalgamation-${{ github.ref_name }}-${{ matrix.variant }}-Linux-x86_64.tar.gz
+      #       build/libsql-${{ github.ref_name }}-Linux-x86_64.tar.gz
+      #       build/libsql-amalgamation-${{ github.ref_name }}-Linux-x86_64.tar.gz
+      #       build/libsql-${{ github.ref_name }}-${{ matrix.variant }}-Linux-aarch64.tar.gz
+      #       build/libsql-amalgamation-${{ github.ref_name }}-${{ matrix.variant }}-Linux-aarch64.tar.gz
+      #       build/libsql-${{ github.ref_name }}-Linux-aarch64.tar.gz
+      #       build/libsql-amalgamation-${{ github.ref_name }}-Linux-aarch64.tar.gz
+      #       build/libsql-${{ github.ref_name }}-${{ matrix.variant }}-Darwin-x86_64.tar.gz
+      #       build/libsql-amalgamation-${{ github.ref_name }}-${{ matrix.variant }}-Darwin-x86_64.tar.gz
+      #       build/libsql-${{ github.ref_name }}-Darwin-x86_64.tar.gz
+      #       build/libsql-amalgamation-${{ github.ref_name }}-Darwin-x86_64.tar.gz
+      #       build/libsql-${{ github.ref_name }}-${{ matrix.variant }}-Darwin-arm64.tar.gz
+      #       build/libsql-amalgamation-${{ github.ref_name }}-${{ matrix.variant }}-Darwin-arm64.tar.gz
+      #       build/libsql-${{ github.ref_name }}-Darwin-arm64.tar.gz
+      #       build/libsql-amalgamation-${{ github.ref_name }}-Darwin-arm64.tar.gz
 
   stop-runner:
     name: Stop self-hosted EC2 runner
@@ -190,7 +191,7 @@ jobs:
       - start-runner # required to get output from the start-runner job
       - build_binaries # required to wait when the main job is done
     runs-on: ubuntu-latest
-    if: ${{ always() }} # required to stop the runner even if the error happened in the previous jobs
+    if: false
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1

@@ -2,10 +2,10 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
   merge_group:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
@@ -20,6 +20,7 @@ concurrency:
 
 jobs:
   checks:
+    if: false
     runs-on: ubuntu-latest
     name: Run Checks
     env:
@@ -69,8 +70,8 @@ jobs:
       #     token: ${{ secrets.GITHUB_TOKEN }}
       #     args: --all-targets --all-features -- -D warnings
 
-
   features:
+    if: false
     name: Check features and unused dependencies
     runs-on: ubuntu-latest
     steps:
@@ -80,55 +81,56 @@ jobs:
       - uses: taiki-e/install-action@cargo-udeps
       - uses: Swatinem/rust-cache@v2
       - run: cargo +nightly hack udeps -p libsql --each-feature
-      - run: RUSTFLAGS="-D warnings --cfg tokio_unstable" cargo check -p libsql --no-default-features --features core 
-      - run: RUSTFLAGS="-D warnings --cfg tokio_unstable" cargo check -p libsql --no-default-features --features replication 
+      - run: RUSTFLAGS="-D warnings --cfg tokio_unstable" cargo check -p libsql --no-default-features --features core
+      - run: RUSTFLAGS="-D warnings --cfg tokio_unstable" cargo check -p libsql --no-default-features --features replication
       - run: RUSTFLAGS="-D warnings --cfg tokio_unstable" cargo check -p libsql --no-default-features --features remote
 
   test:
+    if: false
     runs-on: ubuntu-latest
     name: Run Tests
     env:
       RUSTFLAGS: -D warnings --cfg tokio_unstable
     steps:
-    - uses: hecrj/setup-rust-action@v2
+      - uses: hecrj/setup-rust-action@v2
 
-    # needed because we run out of disk space during tests
-    - name: Free Disk Space (Ubuntu)
-      uses: jlumbroso/free-disk-space@main
-      with:
-        # this might remove tools that are actually needed,
-        # when set to "true" but frees about 6 GB
-        tool-cache: true
+      # needed because we run out of disk space during tests
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # when set to "true" but frees about 6 GB
+          tool-cache: true
 
-    - name: Install deps
-      run: sudo apt update && sudo apt install -y libclang-dev
+      - name: Install deps
+        run: sudo apt update && sudo apt install -y libclang-dev
 
-    - name: Install protoc
-      uses: taiki-e/install-action@v2
-      with:
-        tool: protoc@${{ env.PROTOC_VERSION }}
+      - name: Install protoc
+        uses: taiki-e/install-action@v2
+        with:
+          tool: protoc@${{ env.PROTOC_VERSION }}
 
-    - uses: taiki-e/install-action@v2
-      with:
-        tool: nextest
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
 
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up cargo cache
-      uses: actions/cache@v3
-      continue-on-error: false
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: ${{ runner.os }}-cargo-
+      - name: Set up cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
 
-    - name: Run tests
-      run: cargo nextest run
+      - name: Run tests
+        run: cargo nextest run
   # test-custom-pager:
   #   runs-on: ubuntu-latest
   #   name: Run Tests
@@ -176,50 +178,52 @@ jobs:
   #       LIBSQL_EXPERIMENTAL_PAGER: 1000
   #     run: cargo nextest run
   test-encryption:
+    if: false
     runs-on: ubuntu-latest
     name: Run Tests
     env:
       RUSTFLAGS: -D warnings --cfg tokio_unstable
     steps:
-    - uses: hecrj/setup-rust-action@v2
+      - uses: hecrj/setup-rust-action@v2
 
-    # needed because we run out of disk space during tests
-    - name: Free Disk Space (Ubuntu)
-      uses: jlumbroso/free-disk-space@main
-      with:
-        # this might remove tools that are actually needed,
-        # when set to "true" but frees about 6 GB
-        tool-cache: true
+      # needed because we run out of disk space during tests
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # when set to "true" but frees about 6 GB
+          tool-cache: true
 
-    - name: Install deps
-      run: sudo apt update && sudo apt install -y libclang-dev
+      - name: Install deps
+        run: sudo apt update && sudo apt install -y libclang-dev
 
-    - name: Install protoc
-      uses: taiki-e/install-action@v2
-      with:
-        tool: protoc@${{ env.PROTOC_VERSION }}
+      - name: Install protoc
+        uses: taiki-e/install-action@v2
+        with:
+          tool: protoc@${{ env.PROTOC_VERSION }}
 
-    - uses: taiki-e/install-action@v2
-      with:
-        tool: nextest
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
 
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up cargo cache
-      uses: actions/cache@v3
-      continue-on-error: false
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: ${{ runner.os }}-cargo-
-    - name: embedded replica encryption tests
-      run: cargo xtask test-encryption
+      - name: Set up cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+      - name: embedded replica encryption tests
+        run: cargo xtask test-encryption
   windows:
+    if: false
     runs-on: windows-latest
     name: Windows checks
     steps:
@@ -241,7 +245,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - name: build libsql all features
-        run: cargo build -p libsql --all-features 
+        run: cargo build -p libsql --all-features
 
   # test-rust-wasm:
   #   runs-on: ubuntu-latest

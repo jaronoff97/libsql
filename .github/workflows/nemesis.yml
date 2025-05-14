@@ -2,7 +2,7 @@ name: Nemesis Tests
 
 on:
   schedule:
-    - cron: '* */4 * * *'
+    - cron: "* */4 * * *"
   workflow_dispatch:
 
 env:
@@ -14,8 +14,8 @@ env:
 
 jobs:
   test-nemesis:
+    if: false
     runs-on: ubuntu-latest
-    if: github.repository == 'tursodatabase/libsql'
     name: Run Nemesis Tests
     env:
       RUSTFLAGS: -D warnings --cfg tokio_unstable

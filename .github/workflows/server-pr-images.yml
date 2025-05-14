@@ -6,7 +6,7 @@ name: libsql server pull request Docker image
 on:
   workflow_dispatch:
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   REGISTRY: ghcr.io
@@ -18,14 +18,7 @@ jobs:
     # run this job if either:
     # 1. The pull request is from the same repository and contains '+build' in the body
     # 2. The workflow is manually triggered (workflow_dispatch event)
-    if: >
-      (
-        github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.full_name == github.repository &&
-        github.event.pull_request.body &&
-        contains(github.event.pull_request.body, '+build')
-      ) ||
-      github.event_name == 'workflow_dispatch'
+    if: false
     runs-on: ubuntu-latest
     permissions:
       contents: read
